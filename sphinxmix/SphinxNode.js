@@ -36,7 +36,6 @@ I      It takes a set of parameters, the secret of the server, and an incoming m
     let aes_s = p.get_aes_key(s);
 
     console.assert(beta.length === p.max_len - 32);
-    //Console.log("B: \n%s" % hexlify(beta))
 
     let gamma2 = p.mu(p.hmu(aes_s), beta);
     for(let i = 0; i < gamma.length; i++) {
@@ -44,7 +43,7 @@ I      It takes a set of parameters, the secret of the server, and an incoming m
             throw "MAC mismatch.";
     }
 
-    let beta_pad = beta.concat(new Array(2 * p.max_len).fill(0));
+    let beta_pad = beta.concat(Array(2 * p.max_len).fill(0));
     let B = p.xor_rho(p.hrho(aes_s), beta_pad);
 
     let length = B[0];
@@ -52,7 +51,7 @@ I      It takes a set of parameters, the secret of the server, and an incoming m
     let rest = B.slice(1+length);
 
     let tag = p.htau(aes_s);
-    let b = p.hb(alpha, aes_s);
+    let b = p.hb(aes_s);
     alpha = group.expon(alpha, b);
     gamma = rest.slice(0, p.k);
     beta = rest.slice(p.k, p.k + (p.max_len - 32));

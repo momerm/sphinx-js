@@ -40,15 +40,6 @@ function Group_ECC(gid = "C25519") {
     this.order.rcopy(this.ctx.ROM_CURVE.CURVE_Order);
 
     // Initialise random number generator
-    // Use milagro PRNG
-    /*
-    this.rng = new this.ctx.RAND();
-    const rawlen = 128;
-    let raw = new Uint8Array(rawlen);
-    window.crypto.getRandomValues(raw);
-    this.rng.seed(rawlen, raw);
-    */
-    // Use window.crypto PRNG
     this.rng = new MYRAND();
 
     this.gensecret = function () {
@@ -89,37 +80,6 @@ function Group_ECC(gid = "C25519") {
     };
 }
 
-function test_group() {
-    let G = new Group_ECC();
-    let sec1 = G.gensecret();
-    let sec2 = G.gensecret();
-    let gen = G.g;
-
-    console.assert(G.expon(G.expon(gen, sec1), sec2).equals(G.expon(G.expon(gen, sec2), sec1)));
-    console.assert(G.expon(G.expon(gen, sec1), sec2).equals(G.multiexpon(gen, [sec2, sec1])));
-    console.assert(G.in_group(G.expon(gen, sec1))); // not working
-}
-
-function test_params() {
-    // Test Init
-    let params = new SphinxParams();
-
-    let rand = new Uint8Array(16);
-    window.crypto.getRandomValues(rand);
-    let k = Array.from(rand);
-    let m = "ARG".repeat(16);
-
-    // Test AES
-    let c = params.aes_ctr(k, stringtobytes(m));
-    let m2 = bytestostring(params.aes_ctr(k, c));
-    console.assert(m === m2);
-
-    // Test Lioness
-    c = params.lioness_enc(k, stringtobytes(m));
-    m2 = bytestostring(params.lioness_dec(k, c));
-    console.assert(m === m2);
-}
-
 function SphinxParams(group = null, header_len = 192, body_len = 1024) {
     this.max_len = header_len;
     this.m = body_len;
@@ -135,43 +95,40 @@ function SphinxParams(group = null, header_len = 192, body_len = 1024) {
     this.aes_ctr = function(K, M, IV = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]) {
         /* Input is from an octet string M, output is to an octet string C */
         /* Input is padded as necessary to make up a full final block */
-     //   if(M.length % 16 !== 0)
-       //     throw "aes_ctr bad message length";
 
         let a = new this.ctx.AES();
-        let fin;
-        let i, j, ipt, opt;
-        let buff = [];
-        /*var clen=16+(Math.floor(M.length/16))*16;*/
-
-        let C = [];
+        let i, ipt, opt;
+        let buff = new Array(16);
+        let length = M.length;
+        let r = length % 16;
+        let C = new Array(length);
 
         a.init(this.ctx.AES.CTR16, K.length, K, IV);
 
         ipt = opt = 0;
-        fin = false;
-        for (;;) {
+        while(ipt < length - r) {
             for (i = 0; i < 16; i++) {
-                if (ipt < M.length) buff[i] = M[ipt++];
-                else {
-                    fin = true;
-                    break;
-                }
+                    buff[i] = M[ipt++];
             }
-            if (fin) break;
             a.encrypt(buff);
             for (i = 0; i < 16; i++)
                 C[opt++] = buff[i];
         }
 
-        /* last block, filled up to i-th index */
+        if(r > 0) {
+            for(i = 0; i < r; i++) {
+                buff[i] = M[ipt++];
+            }
+            for (; i < 16; i++) {
+                buff[i++] = 0;
+            }
+            a.encrypt(buff);
+            for (i = 0; i < r; i++)
+                C[opt++] = buff[i];
+        }
 
-        // padlen = 16 - i;
-        // for (j = i; j < 16; j++) buff[j] = padlen;
-        // a.encrypt(buff);
-        // for (i = 0; i < 16; i++)
-        //     C[opt++] = buff[i];
         a.end();
+
         return C;
     };
 
@@ -195,9 +152,7 @@ function SphinxParams(group = null, header_len = 192, body_len = 1024) {
 
         // Round 4
         c = this.aes_ctr(key, r3.slice(this.k), r3.slice(0, this.k));
-        let r4 = r3.slice(0, this.k).concat(c);
-
-        return r4;
+        return r3.slice(0, this.k).concat(c); //r4
     };
 
     this.lioness_dec = function (key, message) {
@@ -215,18 +170,16 @@ function SphinxParams(group = null, header_len = 192, body_len = 1024) {
         // Round 3
         let k2 = this.hash(r3_long.concat(key).concat([51])).slice(0, this.k);
         let r2_short = this.aes_ctr(key, r3_short, k2);
-        let r2_long = r3_long;
+       // let r2_long = r3_long;
 
         // Round 2
-        let r1_long = this.aes_ctr(key, r2_long, r2_short);
+        let r1_long = this.aes_ctr(key, r3_long, r2_short);
         let r1_short = r2_short;
 
         // Round 1
         let k0 = this.hash(r1_long.concat(key).concat([49])).slice(0, this.k);
         let c = this.aes_ctr(key, r1_short, k0);
-        let r0 = c.concat(r1_long);
-
-        return r0;
+        return c.concat(r1_long); // r0
     };
 
     this.xor_rho = function(key, plain) {
@@ -276,7 +229,7 @@ function SphinxParams(group = null, header_len = 192, body_len = 1024) {
         return this.aes_ctr(k, m, iv);
     };
 
-    this.hb = function (alpha, k) {
+    this.hb = function (k) {
         // "Compute a hash of alpha and s to use as a blinding factor"
         // "hbhbhbhbhbhbhbhb" = [104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98]
         let K = this.derive_key(k, [104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98, 104, 98]);
