@@ -26,7 +26,7 @@ packet format by George Danezis".
 const assert = require('chai').assert;
 const SphinxParams = require("../lib/SphinxParams");
 const getRandomValues = require('get-random-values');
-const Enc = require("../lib/EncodeString");
+const bytesjs = require("bytes.js");
 
 describe("Test SphinxParams", function () {
     let params = new SphinxParams();
@@ -36,15 +36,15 @@ describe("Test SphinxParams", function () {
 
     it("test AES", function () {
         let m = "Hello World!";
-        let c = params.aes_ctr(k, Enc.stringtobytes(m));
-        let m2 = Enc.bytestostring(params.aes_ctr(k, c));
+        let c = params.aes_ctr(k, bytesjs.fromString(m));
+        let m2 = bytesjs.toString(params.aes_ctr(k, c));
         assert.strictEqual(m2, m);
     });
 
     it("test LIONESS", function () {
         let m = "ARG".repeat(16);
-        let c = params.lioness_enc(k, Enc.stringtobytes(m));
-        let m2 = Enc.bytestostring(params.lioness_dec(k, c));
+        let c = params.lioness_enc(k, bytesjs.fromString(m));
+        let m2 = bytesjs.toString(params.lioness_dec(k, c));
         assert.strictEqual(m2, m);
     });
 
