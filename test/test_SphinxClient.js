@@ -24,9 +24,9 @@ packet format by George Danezis".
 */
 
 const assert = require('chai').assert;
+const bytesjs = require("bytes.js");
 const SphinxParams = require("../lib/SphinxParams");
 const SC = require("../lib/SphinxClient");
-const Enc = require("../lib/EncodeString");
 const sphinx_process = require("../lib/SphinxNode").sphinx_process;
 
 describe("Test SphinxClient", function () {
@@ -52,8 +52,8 @@ describe("Test SphinxClient", function () {
        let use_nodes = SC.rand_subset(Object.getOwnPropertyNames(pkiPub), r);
        let nodes_routing = use_nodes.map(n => SC.nenc(n));
        let node_keys = use_nodes.map(n => pkiPub[n].y);
-       let dest = Enc.stringtobytes("bob");
-       let message = Enc.stringtobytes("this is a test");
+       let dest = bytesjs.fromString("bob");
+       let message = bytesjs.fromString("this is a test");
        let [header, delta] = SC.create_forward_message(params, nodes_routing, node_keys, dest, message);
 
        // Test encoding and decoding
@@ -90,8 +90,8 @@ describe("Test SphinxClient", function () {
                    assert.strictEqual(delta[j], 0);
                }
                let [dec_dest, dec_msg] = SC.receive_forward(params, delta);
-               assert.strictEqual(Enc.bytestostring(dec_dest), Enc.bytestostring(dest));
-               assert.strictEqual(Enc.bytestostring(dec_msg), Enc.bytestostring(message));
+               assert.strictEqual(bytesjs.toString(dec_dest), bytesjs.toString(dest));
+               assert.strictEqual(bytesjs.toString(dec_msg), bytesjs.toString(message));
                break;
            }
            else {
@@ -101,9 +101,9 @@ describe("Test SphinxClient", function () {
        }
 
        // Test the nym creation
-       let [surbid, surbkeytuple, nymtuple] = SC.create_surb(params, nodes_routing, node_keys, Enc.stringtobytes("myself"));
+       let [surbid, surbkeytuple, nymtuple] = SC.create_surb(params, nodes_routing, node_keys, bytesjs.fromString("myself"));
 
-       message = Enc.stringtobytes("This is a reply");
+       message = bytesjs.fromString("This is a reply");
        [header, delta] = SC.package_surb(params, nymtuple, message);
 
        x = pkiPriv[use_nodes[0]].x;
@@ -119,12 +119,13 @@ describe("Test SphinxClient", function () {
            }
            else if (routing[0] === SC.Surb_flag) {
                let [flag, dest, myid] = routing;
+               assert.deepEqual(myid, surbid);
                break;
            }
        }
 
        let received = SC.receive_surb(params, surbkeytuple, delta);
-       assert.strictEqual(Enc.bytestostring(received), Enc.bytestostring(message));
+       assert.strictEqual(bytesjs.toString(received), bytesjs.toString(message));
    });
 
    it("test encoding and processing times", function () {
@@ -147,8 +148,8 @@ describe("Test SphinxClient", function () {
        let node_keys = use_nodes.map(n => pkiPub[n].y);
 
        let header, delta;
-       let dest = Enc.stringtobytes("dest");
-       let message = Enc.stringtobytes("this is a test");
+       let dest = bytesjs.fromString("dest");
+       let message = bytesjs.fromString("this is a test");
        console.time("mix encoding");
      //  for(let i = 0; i < 100; i++) {
            [header, delta] = SC.create_forward_message(params, nodes_routing, node_keys, dest, message);
