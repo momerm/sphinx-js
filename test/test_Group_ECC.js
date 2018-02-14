@@ -36,7 +36,6 @@ describe("Test Group_ECC", function() {
 
         assert(G.expon(G.expon(gen, sec1), sec2).equals(G.expon(G.expon(gen, sec2), sec1)));
         assert(G.expon(G.expon(gen, sec1), sec2).equals(G.multiexpon(gen, [sec2, sec1])));
-        assert(G.in_group(G.expon(gen, sec1)));
     });
 
 });

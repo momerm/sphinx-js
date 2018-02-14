@@ -29,13 +29,17 @@ const getRandomValues = require('get-random-values');
 const bytesjs = require("bytes.js");
 
 describe("Test SphinxParams", function () {
-    let params = new SphinxParams();
-    let rand = new Uint8Array(16);
-    getRandomValues(rand);
-    let k = Array.from(rand);
+    let params, k;
+
+    before(function () {
+        params = new SphinxParams();
+        let rand = new Uint8Array(16);
+        getRandomValues(rand);
+        k = Array.from(rand);
+    });
 
     it("test AES", function () {
-        let m = "Hello World!";
+        let m = "Hello World!"*7;
         let c = params.aes_ctr(k, bytesjs.fromString(m));
         let m2 = bytesjs.toString(params.aes_ctr(k, c));
         assert.strictEqual(m2, m);

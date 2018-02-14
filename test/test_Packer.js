@@ -23,6 +23,33 @@ from "Experimental implementation of the sphinx cryptographic mix
 packet format by George Danezis".
 */
 
-module.exports.SphinxParams = require("./lib/SphinxParams");
-module.exports.SphinxClient = require("./lib/SphinxClient");
-module.exports.SphinxNode = require("./lib/SphinxNode");
+const assert = require('chai').assert;
+const Group_ECC = require("../lib/Group_ECC");
+const Packer = require("../lib/Packer");
+
+describe("Test Packer", function() {
+
+    it("test encoding an ECP", function () {
+        let G = new Group_ECC();
+        let sec = G.gensecret();
+        let gen = G.g;
+        let alpha = G.expon(gen, sec);
+        let packer = new Packer(G.ctx);
+        let enc = packer.encode(alpha);
+        let alpha_dec = packer.decode(enc);
+
+        assert.isTrue(alpha.equals(alpha_dec));
+    });
+
+    it("test encoding an invalid public key", function () {
+        let G = new Group_ECC();
+        let alpha = new G.ctx.ECP();
+        alpha.inf();
+        let packer = new Packer(G.ctx);
+        let enc = packer.encode(alpha);
+        assert.throw(function () {
+            packer.decode(enc);
+        });
+    });
+
+});
