@@ -28,10 +28,12 @@
     "bytes.js": "0.0.2",
     "get-random-values": "^1.2.0",
     "milagro-crypto-js": "git+https://github.com/milagro-crypto/milagro-crypto-js.git",
-    "msgpack-lite": "^0.1.26"
+    "msgpack5": "^4.0.1"
   },
   "devDependencies": {
     "chai": "^4.1.2",
+    "grunt": "^1.0.2",
+    "grunt-patcher": "^1.0.0",
     "istanbul": "^0.4.5",
     "mocha": "^5.0.0",
     "nyc": "^11.4.1"
