@@ -131,26 +131,6 @@ describe("Test SphinxClient", function () {
        assert.strictEqual(bytesjs.toString(received), bytesjs.toString(message));
    });
 
-/*
-   it("test encoding and processing times", function () {
-       let header, delta;
-       let dest = bytesjs.fromString("dest");
-       let message = bytesjs.fromString("this is a test");
-
-       console.time("mix encoding");
-     //  for(let i = 0; i < 100; i++) {
-           [header, delta] = SC.create_forward_message(params, nodes_routing, node_keys, dest, message);
-       //}
-       console.timeEnd("mix encoding");
-
-       console.time("mix processing");
-      // for(let i = 0; i < 100; i++) {
-           let x = pki[use_nodes[0]].x;
-           sphinx_process(params, x, header, delta);
-      // }
-       console.timeEnd("mix processing");
-   });
-*/
     it("test assoc routing", function (done) {
         params.assoc_len = 4;
         let dest = bytesjs.fromString("bob");
