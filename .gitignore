@@ -11,3 +11,6 @@ package-lock.json
 
 #coverage output
 .nyc_output/
+
+#compiled files
+benchmark/browser/Benchmark.bundle.js

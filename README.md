@@ -33,7 +33,7 @@ npm test
 Run the node benchmark with 
 ````
 npm install
-npm benchmark
+npm run benchmark
 ````
 To run the browser benchmark first compile the browser code with Browserify. 
 Then open `benchmark/browser/index.html` in your browser.

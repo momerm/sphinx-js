@@ -30,6 +30,7 @@ const sphinx_process = require("../../lib/SphinxNode").sphinx_process;
 const bytesjs = require("bytes.js");
 const r = 5;
 const params = new SphinxParams();
+const N = 100; // number of times to repeat
 
 let nodes_routing = [];
 let node_priv_keys = [];
@@ -52,16 +53,14 @@ let t0, t1;
 
 console.log("Testing message encoding time");
 let header, delta;
-let bin_message;
 t0 = Date.now();
 
-for(let i = 0; i < 100; i++) {
+for(let i = 0; i < N; i++) {
     [header, delta] = SC.create_forward_message(params, nodes_routing, node_pub_keys, dest, message);
-    bin_message = SC.pack_message(params, [header, delta]);
 }
 
 t1 = Date.now();
-let avgTime = (t1 - t0) / 100;
+let avgTime = (t1 - t0) / N;
 let text = `Encoding took ${avgTime} milliseconds.`;
 console.log(text);
 let para = document.createElement("p");
@@ -77,13 +76,12 @@ let param_dict = {};
 param_dict[lens] = params;
 t0 = Date.now();
 
-for(let i = 0; i < 100; i++) {
-    [header, delta] = SC.unpack_message(param_dict, params.ctx, bin_message)[1];
+for(let i = 0; i < N; i++) {
     sphinx_process(params, x, header, delta);
 }
 
 t1 = Date.now();
-avgTime = (t1 - t0) / 100;
+avgTime = (t1 - t0) / N;
 text = `Processing took ${avgTime} milliseconds.`;
 console.log(text);
 para = document.createElement("p");
