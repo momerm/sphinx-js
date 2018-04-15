@@ -69,11 +69,48 @@ para.appendChild(node);
 document.body.appendChild(para);
 
 
-console.log("Testing message processing time");
-let x = node_priv_keys[0];
+console.log("Testing message packing time");
+let m = [header, delta];
+let packet;
+t0 = Date.now();
+
+for(let i = 0; i < N; i++) {
+    packet = SC.pack_message(params, m);
+}
+
+t1 = Date.now();
+avgTime = (t1 - t0) / N;
+text = `Packing took ${avgTime} milliseconds.`;
+console.log(text);
+para = document.createElement("p");
+node = document.createTextNode(text);
+para.appendChild(node);
+document.body.appendChild(para);
+
+
+console.log("Testing message unpacking time");
 let lens = JSON.stringify([params.max_len, params.m]);
+let ctx = params.ctx;
 let param_dict = {};
 param_dict[lens] = params;
+t0 = Date.now();
+
+for(let i = 0; i < N; i++) {
+    m = SC.unpack_message(param_dict, ctx, packet)
+}
+
+t1 = Date.now();
+avgTime = (t1 - t0) / N;
+text = `Unpacking took ${avgTime} milliseconds.`;
+console.log(text);
+para = document.createElement("p");
+node = document.createTextNode(text);
+para.appendChild(node);
+document.body.appendChild(para);
+
+
+console.log("Testing message processing time");
+let x = node_priv_keys[0];
 t0 = Date.now();
 
 for(let i = 0; i < N; i++) {

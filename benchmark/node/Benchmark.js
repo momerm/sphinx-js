@@ -28,10 +28,14 @@ const SC = require("../../lib/SphinxClient");
 const sphinx_process = require("../../lib/SphinxNode").sphinx_process;
 
 const bytesjs = require("bytes.js");
-const r = 5;
+
+const r = 5; // Number of hops
 const params = new SphinxParams();
 const N = 100; // number of times to repeat
 
+// Use AES?
+//params.pi = params.xor_rho;
+//params.pii = params.xor_rho;
 
 let nodes_routing = [];
 let node_priv_keys = [];
@@ -51,6 +55,7 @@ let dest = bytesjs.fromString("bob");
 let message = bytesjs.fromString("this is a test");
 let t0, t1;
 
+
 console.log("Testing message encoding time");
 let header, delta;
 t0 = Date.now();
@@ -60,14 +65,39 @@ for(let i = 0; i < N; i++) {
 }
 
 t1 = Date.now();
-console.log("Encoding took " + ((t1 - t0) / N) + " milliseconds.");
+console.log("Encoding took " + ((t1 - t0) / N) + " milliseconds.\n");
+
+
+console.log("Testing message packing time");
+let m = [header, delta];
+let packet;
+t0 = Date.now();
+
+for(let i = 0; i < N; i++) {
+    packet = SC.pack_message(params, m);
+}
+
+t1 = Date.now();
+console.log("Packing took " + ((t1 - t0) / N) + " milliseconds.\n");
+
+
+console.log("Testing message unpacking time");
+let lens = JSON.stringify([params.max_len, params.m]);
+let ctx = params.ctx;
+let param_dict = {};
+param_dict[lens] = params;
+t0 = Date.now();
+
+for(let i = 0; i < N; i++) {
+    m = SC.unpack_message(param_dict, ctx, packet)
+}
+
+t1 = Date.now();
+console.log("Unpacking took " + ((t1 - t0) / N) + " milliseconds.\n");
 
 
 console.log("Testing message processing time");
 let x = node_priv_keys[0];
-let lens = JSON.stringify([params.max_len, params.m]);
-let param_dict = {};
-param_dict[lens] = params;
 t0 = Date.now();
 
 for(let i = 0; i < N; i++) {
@@ -75,4 +105,4 @@ for(let i = 0; i < N; i++) {
 }
 
 t1 = Date.now();
-console.log("processing took " + ((t1 - t0) / N) + " milliseconds.");
+console.log("processing took " + ((t1 - t0) / N) + " milliseconds.\n");
